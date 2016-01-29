@@ -1,0 +1,26 @@
+###########################################
+# Syntax Coloring Map For SNTPtime library
+###########################################
+
+###########################################
+# Datatypes (KEYWORD1)
+###########################################
+
+TZ_UTC			KEYWORD1
+TZ_LOCAL		KEYWORD1
+TZ_LOCAL2UTC	KEYWORD1
+
+SNTP_RULE_DST	KEYWORD1
+SNTP_RULE_STD	KEYWORD1
+
+###########################################
+# Methods and Functions (KEYWORD2)
+###########################################
+
+
+SNTP_TimeZone_RuleSet	KEYWORD2
+
+SNTP_TimeZone_Offset	KEYWORD2
+SNTP_TimeZone_Offset	KEYWORD2
+
+SNTP_GetTime			KEYWORD2
