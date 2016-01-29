@@ -1,0 +1,39 @@
+
+body {
+	background : #CCBB77;
+	text-align : center;
+	line-height : 2;
+}
+
+a.button, input[type=reset], input[type=submit], input[type=button] {
+	border-radius : 5px 3px 5px 3px ;
+	moz-border-radius : 5px 3px 5px 3px ;
+	box-shadow: 3px 3px 5px #666666;
+	padding: 5px;
+	margin : 5px;
+	white-space : nowrap;
+	font-size : 18px;
+	font-weight : bold;
+	font-style : italic;
+	text-decoration : none;
+	color : #CC2233;
+	background-color: #DDDDDD;
+	z-index : 1;
+	cursor : pointer;
+}
+
+p {
+	text-align : center;
+	padding: 2px;
+	margin: 0px;
+}
+
+h3 {
+	text-align : center;
+	padding: 0px;
+	margin: 0px;
+}
+
+.MenuList {
+	line-height : 3;
+}

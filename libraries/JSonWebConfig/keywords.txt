@@ -1,0 +1,17 @@
+###########################################
+# Syntax Coloring Map For SNTPtime library
+###########################################
+
+###########################################
+# Datatypes (KEYWORD1)
+###########################################
+
+WebSrv					KEYWORD1
+
+###########################################
+# Methods and Functions (KEYWORD2)
+###########################################
+
+WebSrv_Setup			KEYWORD2
+handleWWW				KEYWORD2
+WebSrvIsAuthentified	KEYWORD2

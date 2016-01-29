@@ -1,0 +1,79 @@
+<html><head><title>ESP8266 Config</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link type="text/css" rel="stylesheet" href="/css/default.css">
+<script type="text/javascript" src="/js/default.js"></script>
+</head><body onload="javascript: PageInit(); FillTZoptions('DST'); FillTZoptions('STD');"><center><table border="0"><tr><th width="150px" valign="top">
+<img src="/img/ESPlogo.png" alt="ESPLogo" height="80" width="80"></br>
+
+<span class="MenuList">
+</br><input type="button" value="Credentials" onclick="javascript: HideAllMenuItems(); ToggleMenu('Credentials'); return false;">
+</br><input type="button" value="Reboot/Reset" onclick="javascript: HideAllMenuItems(); ToggleMenu('Reboot'); return false;">
+</br><input type="button" value="JSon config" onclick="javascript: HideAllMenuItems(); ToggleMenu('JScfg'); return false;">
+</br><input type="button" value="Config parameters" onclick="javascript: HideAllMenuItems(); ToggleMenu('cfg'); return false;">
+</span>
+
+</th><td style="min-width: 300px;" valign="top"><h3>ESP8266 Configuration</h3>
+<form id="Actions" action="/Config" method="POST">
+
+<span id="MenuItem_Credentials" class="MenuItem"></br>
+<h3>Change User/Password (both are case sensitive)</h3></br>
+New Username: <input type="text" name="NewUSR"></br></br>
+New Password: <input type="password" name="NewPWD"></br>
+<p><input type="submit" name="Action" value="Change Credentials"></p>
+<hr></span>
+
+<span id="MenuItem_Reboot" class="MenuItem"></br>
+<h3>Reboot the system or reset to defaults</h3>
+<p><input type="submit" name="Action" value="Reboot"><img src="/img/spc.png" alt="" height="1" width="20"><input type="submit" name="Action" value="Reset to defaults"></p>
+<hr></span>
+
+<span id="MenuItem_JScfg" class="MenuItem"></br>
+<h3>System config as JSon string</h3>
+<textarea name="JScfg" rows="7" cols="50"></textarea></br>
+<p><input type="submit" name="Action" value="Save Config"></p>
+<hr></span>
+</form>
+
+<form id="cfg" action="/Config" method="POST">
+<span id="MenuItem_cfg" class="MenuItem"></br>
+<h3>System config parameters</h3>
+<center><i style="color:red">If a field is left blank will delete current value!</br>Make sure you provide AP or at least one STA!</i><table border="0">
+<tr><th colspan="2">SoftAP (AP) settings</th></tr>
+<tr><td>SSID: </td><td><input type="text" name="SSID" maxlength="32" size="30"></td></tr>
+<tr><td>Passphrase: </td><td><input type="password" name="PWD" maxlength="64" size="30" onchange="javascript: return ValidPassphrase(this);"></td></tr>
+<tr><td>IP: </td><td><input type="text" name="IP" onchange="javascript: return ValidIP(this);" maxlength="15" size="18"></td></tr>
+<tr><td>MASK: </td><td><input type="text" name="MASK" onchange="javascript: return ValidIP(this);" maxlength="15" size="18"></td></tr>
+
+<tr><th colspan="2">Client/Station (STA) settings</th></tr>
+<tr><td colspan="2"><i style="color:red">Add your desired number of STAs before filling their details</i></td></tr>
+<tr><td colspan="2" align="center"><input type="button" value="Add STA" onclick="javascript: MultiplyIt('STA', 3); return false;">
+<table id="STA_GetIt" style="display: none;"><tr><td>SSID NNN: </td><td><input type="text" name="SSID_NNN" maxlength="32" size="30"></td></tr>
+<tr><td>Passphrase NNN: </td><td><input type="password" name="PWD_NNN" maxlength="64" size="30" onchange="javascript: return ValidPassphrase(this);"></td></tr></table>
+<table id="STA_PlaceIt"></table>
+
+<tr><th colspan="2">SNTP Servers (IP or hostname)</th></tr>
+<tr><td>SNTP 1: </td><td><input type="text" name="SNTP_1" size="30"></td></tr>
+<tr><td>SNTP 2: </td><td><input type="text" name="SNTP_2" size="30"></td></tr>
+<tr><td>SNTP 3: </td><td><input type="text" name="SNTP_3" size="30"></td></tr>
+
+<tr><th colspan="2">Time Zone Rules</th></tr>
+<tr><th>DST </th><td><input type="text" name="DST_Name" placeholder="Name" maxlength="6" size="6"></td></tr>
+<tr><td>Month: </td><td><select id="DST_Month" name="DST_Month"><option>Please select</option></select></td></tr>
+<tr><td>Week: </td><td><select id="DST_Week" name="DST_Week"><option>Please select</option></selct></td></tr>
+<tr><td>Day of Week: </td><td><select id="DST_DoW" name="DST_DoW"><option>Please select</option></select></td></tr>
+<tr><td>Hour: </td><td><select id="DST_Hour" name="DST_Hour"><option>Please select</option></select></td></tr>
+<tr><td>Offset: </td><td><select id="DST_Offset" name="DST_Offset"><option>Please select</option></select></td></tr>
+
+<tr><th>STD </th><td><input type="text" name="STD_Name" placeholder="Name" maxlength="6" size="6"></td></tr>
+<tr><td>Month: </td><td><select id="STD_Month" name="STD_Month"><option>Please select</option></select></td></tr>
+<tr><td>Week: </td><td><select id="STD_Week" name="STD_Week"><option>Please select</option></selct></td></tr>
+<tr><td>Day of Week: </td><td><select id="STD_DoW" name="STD_DoW"><option>Please select</option></select></td></tr>
+<tr><td>Hour: </td><td><select id="STD_Hour" name="STD_Hour"><option>Please select</option></select></td></tr>
+<tr><td>Offset: </td><td><select id="STD_Offset" name="STD_Offset"><option>Please select</option></select></td></tr>
+
+</table></center>
+<p><input type="submit" value="Save Config"></p>
+<hr></span>
+</form>
+
+</td></tr></table></center></body></html>
