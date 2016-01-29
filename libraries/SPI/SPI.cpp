@@ -22,6 +22,8 @@
 #include "SPI.h"
 #include "HardwareSerial.h"
 
+#define SPI_FLASH_READ_MODE_MASK 0x196000
+
 typedef union {
         uint32_t regValue;
         struct {
@@ -37,35 +39,133 @@ SPIClass SPI;
 
 SPIClass::SPIClass() {
     useHwCs = false;
+    LastUsedDev = HSPI_IDLE;
 }
 
-void SPIClass::begin() {
-    pinMode(SCK, SPECIAL);  ///< GPIO14
-    pinMode(MISO, SPECIAL); ///< GPIO12
-    pinMode(MOSI, SPECIAL); ///< GPIO13
+void SPIClass::RegBackup(uint32 backup_mem[7])
+{
+    uint8_t ptr = 0;
 
-    SPI1C = 0;
-    setFrequency(1000000); ///< 1MHz
-    SPI1U = SPIUMOSI | SPIUDUPLEX | SPIUSSE;
-    SPI1U1 = (7 << SPILMOSI) | (7 << SPILMISO);
-    SPI1C1 = 0;
+    backup_mem[ptr++] = SPI1CMD;
+    backup_mem[ptr++] = SPI1C;
+    backup_mem[ptr++] = SPI1CLK;
+    backup_mem[ptr++] = SPI1U;
+    backup_mem[ptr++] = SPI1U1;
+    backup_mem[ptr++] = SPI1U2;
+    backup_mem[ptr] = SPI1P;
 }
 
-void SPIClass::end() {
-    pinMode(SCK, INPUT);
-    pinMode(MISO, INPUT);
-    pinMode(MOSI, INPUT);
-    if(useHwCs) {
-        pinMode(SS, INPUT);
+void SPIClass::RegRestore(uint32 backup_mem[7])
+{
+    uint8_t ptr = 0;
+
+    SPI1CMD = backup_mem[ptr++];
+    SPI1C = backup_mem[ptr++];
+    SPI1CLK = backup_mem[ptr++];
+    SPI1U = backup_mem[ptr++];
+    SPI1U1 = backup_mem[ptr++];
+    SPI1U2 = backup_mem[ptr++];
+    SPI1P = backup_mem[ptr];
+}
+
+void SPIClass::OverlapInit(void)
+{
+    // Enable HSPI overlap to SPI, Two SPI Masters on CSPI
+    IOSWAP |= IOSWAP2CS;
+
+    // Set higher priority for SPI than HSPI and enable HwCs
+    SPI0E3 |= 0x1;
+    SPI1E3 |= 0x3;
+    SPI1U |= (SPIUCSSETUP | SPIUCSHOLD);
+}
+
+void SPIClass::OverlapDeinit(void)
+{
+    // Disable HSPI overlap to SPI, Two SPI Masters on CSPI
+    IOSWAP &= ~IOSWAP2CS;
+
+    // Set higher priority for HSPI than SPI and disable HwCs
+    SPI0E3 &= ~0x1;
+    SPI1E3 &= ~0x3;
+    SPI1U &= ~(SPIUCSSETUP | SPIUCSHOLD);
+}
+
+void SPIClass::begin(spi_devno dev_no) {
+    while(SPI1CMD & SPIBUSY) {}
+
+    SPISettings settings = {ESP8266_CLOCK, LSBFIRST, SPI_MODE0};
+    switch(dev_no){
+        case HSPI_CS_DEV :
+            pinMode(SCK, SPECIAL);  ///< GPIO14
+            pinMode(MISO, SPECIAL); ///< GPIO12
+            pinMode(MOSI, SPECIAL); ///< GPIO13
+
+            SPI1C = 0;
+            SPI1U = SPIUMOSI | SPIUDUPLEX | SPIUSSE;
+            SPI1U1 = (7 << SPILMOSI) | (7 << SPILMISO);
+            SPI1C1 = 0;
+            settings._clock = 1000000;	// Use default 1MHz Frequency
+            break;
+        case SPI_CS0_FLASH :
+            OverlapInit();
+            break;
+        case SPI_CS1_DEV :
+            OverlapInit();
+            pinMode(1, FUNCTION_1);	// GPIO1
+            break;
+        case SPI_CS2_DEV :
+            OverlapInit();
+            pinMode(0, FUNCTION_1);	// GPIO0
+            break;
+        default: return;
+    }
+
+    if ( LastUsedDev == HSPI_IDLE ) {	// First begin()
+        SPI1C &= ~(SPI_FLASH_READ_MODE_MASK);
+        SPI1C |= (SPI0C & SPI_FLASH_READ_MODE_MASK);
+        RegBackup(hspi_flash_reg_backup);
+        bitClear(SPI1U, SPIUFLASHMODE);
+        HSPIdevSel( {1000000, LSBFIRST, SPI_MODE0}, HSPI_CS_DEV);
+        RegBackup(hspi_dev_reg_backup);
+    }
+
+    HSPIdevSel(settings, dev_no);
+}
+
+void SPIClass::end(spi_devno dev_no) {
+    while(SPI1CMD & SPIBUSY) {}
+
+    switch(dev_no){
+        case HSPI_CS_DEV :
+            pinMode(SCK, INPUT);
+            pinMode(MISO, INPUT);
+            pinMode(MOSI, INPUT);
+            if(useHwCs) {
+                pinMode(SS, INPUT);
+            }
+            break;
+        case SPI_CS0_FLASH :
+            break;
+        case SPI_CS1_DEV :
+            pinMode(1, INPUT);
+            break;
+        case SPI_CS2_DEV :
+            pinMode(0, INPUT);
+            break;
+        default: return;
     }
 }
 
 void SPIClass::setHwCs(bool use) {
-    if(use) {
+    while(SPI1CMD & SPIBUSY) {}
+
+    if (LastUsedDev != HSPI_CS_DEV) return;	// Only HSPI allows the use of soft CS
+
+    if (use) {
         pinMode(SS, SPECIAL); ///< GPIO15
         SPI1U |= (SPIUCSSETUP | SPIUCSHOLD);
     } else {
-        if(useHwCs) {
+        if (useHwCs) {
             pinMode(SS, INPUT);
             SPI1U &= ~(SPIUCSSETUP | SPIUCSHOLD);
         }
@@ -73,11 +173,64 @@ void SPIClass::setHwCs(bool use) {
     useHwCs = use;
 }
 
-void SPIClass::beginTransaction(SPISettings settings) {
+void SPIClass::HSPIdevSel(SPISettings settings, spi_devno dev_no)
+{
     while(SPI1CMD & SPIBUSY) {}
+
+    if ( LastUsedDev == SPI_CS0_FLASH && LastUsedDev != dev_no ) RegRestore(hspi_dev_reg_backup);
+    else if ( dev_no == SPI_CS0_FLASH && LastUsedDev != dev_no ) RegRestore(hspi_flash_reg_backup);
+
+    LastUsedDev = dev_no;
+
+    switch(dev_no){
+        case HSPI_CS_DEV :
+            bitClear(SPI1P, 0);
+            bitSet(SPI1P, 1);
+            bitSet(SPI1P, 2);
+            setHwCs(useHwCs);
+            break;
+        case SPI_CS0_FLASH :
+            bitClear(SPI1P, 0);
+            bitSet(SPI1P, 1);
+            bitSet(SPI1P, 2);
+            SPI1U |= (SPIUCSSETUP | SPIUCSHOLD);	// HwCs
+            break;
+        case SPI_CS1_DEV :
+            bitClear(SPI1P, 1);
+            bitSet(SPI1P, 0);
+            bitSet(SPI1P, 2);
+            SPI1U |= (SPIUCSSETUP | SPIUCSHOLD);	// HwCs
+            break;
+        case SPI_CS2_DEV :
+            bitClear(SPI1P, 2);
+            bitSet(SPI1P, 0);
+            bitSet(SPI1P, 1);
+            SPI1U |= (SPIUCSSETUP | SPIUCSHOLD);	// HwCs
+            break;
+        default: break;
+    }
+
     setFrequency(settings._clock);
     setBitOrder(settings._bitOrder);
     setDataMode(settings._dataMode);
+}
+
+void SPIClass::beginTransaction(SPISettings settings, spi_devno dev_no, spi_modes spi_mode) {
+    HSPIdevSel(settings, dev_no);
+
+    SPI1C &= ~(SPICQIO | SPICDIO | SPICFASTRD);	// Reset to defaults (SIO)
+    SPI1U &= ~(SPIUFWQIO | SPIUFWDIO);
+    switch (spi_mode) {
+        case SPI_QIO :
+            SPI1C |= (SPICQIO | SPICFASTRD);
+            SPI1U |= SPIUFWQIO;
+            break;
+        case SPI_DIO :
+            SPI1C |= (SPICDIO | SPICFASTRD);
+            SPI1U |= SPIUFWDIO;
+            break;
+        default: break;
+    }
 }
 
 void SPIClass::endTransaction() {
@@ -102,7 +255,7 @@ void SPIClass::setDataMode(uint8_t dataMode) {
     }
 
     if(CPOL) {
-        //todo How set CPOL???
+        //todo How set CPOL???		SPIC2CKO(H/L)M ???
     }
 
 }
@@ -209,9 +362,9 @@ void SPIClass::setFrequency(uint32_t freq) {
 
 void SPIClass::setClockDivider(uint32_t clockDiv) {
     if(clockDiv == 0x80000000) {
-        GPMUX |= (1 << 9); // Set bit 9 if sysclock required
+        bitSet(GPMUX, 9); // Set bit 9 if sysclock required
     } else {
-        GPMUX &= ~(1 << 9);
+        bitClear(GPMUX, 9);
     }
     SPI1CLK = clockDiv;
 }

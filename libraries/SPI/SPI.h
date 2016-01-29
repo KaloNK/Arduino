@@ -36,6 +36,9 @@
 #define SPI_CLOCK_DIV64 	0x027c1001 //250 KHz
 #define SPI_CLOCK_DIV128 	0x04fc1001 //125 KHz
 
+enum spi_devno { HSPI_CS_DEV = 0, SPI_CS1_DEV, SPI_CS2_DEV, SPI_CS0_FLASH, HSPI_IDLE };
+enum spi_modes { SPI_SIO = 0, SPI_DIO, SPI_QIO };
+
 const uint8_t SPI_MODE0 = 0x00; ///<  CPOL: 0  CPHA: 0
 const uint8_t SPI_MODE1 = 0x01; ///<  CPOL: 0  CPHA: 1
 const uint8_t SPI_MODE2 = 0x10; ///<  CPOL: 1  CPHA: 0
@@ -53,14 +56,16 @@ public:
 class SPIClass {
 public:
   SPIClass();
-  void begin();
-  void end();
+  void begin(spi_devno dev_no = HSPI_CS_DEV);
+  void end(spi_devno dev_no = HSPI_CS_DEV);
+  void OverlapInit(void);
+  void OverlapDeinit(void);
   void setHwCs(bool use);
   void setBitOrder(uint8_t bitOrder);  
   void setDataMode(uint8_t dataMode);
   void setFrequency(uint32_t freq);
   void setClockDivider(uint32_t clockDiv);
-  void beginTransaction(SPISettings settings);
+  void beginTransaction(SPISettings settings, spi_devno dev_no = HSPI_CS_DEV, spi_modes spi_mode = SPI_SIO);
   uint8_t transfer(uint8_t data);
   uint16_t transfer16(uint16_t data);
   void write(uint8_t data);
@@ -73,6 +78,13 @@ public:
   void transferBytes(uint8_t * out, uint8_t * in, uint32_t size);
   void endTransaction(void);
 private:
+  spi_devno LastUsedDev;
+  uint32 hspi_flash_reg_backup[7];
+  uint32 hspi_dev_reg_backup[7];
+  void RegBackup(uint32 backup_mem[7]);
+  void RegRestore(uint32 backup_mem[7]);
+  void HSPIdevSel(SPISettings settings, spi_devno dev_no);
+
   bool useHwCs;
   void writeBytes_(uint8_t * data, uint8_t size);
   void writePattern_(uint8_t * data, uint8_t size, uint8_t repeat);

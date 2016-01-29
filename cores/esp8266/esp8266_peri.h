@@ -489,6 +489,7 @@ extern uint8_t esp8266_gpioToFn[16];
 #define SPIUCSSETUP (1 << 5) //SPI_CS_SETUP
 #define SPIUCSHOLD (1 << 4) //SPI_CS_HOLD
 #define SPIUAHBUCMD (1 << 3) //SPI_AHB_USR_COMMAND
+#define SPIUFLASHMODE (1 << 2) //SPI_FLASH_MODE
 #define SPIUAHBUCMD4B (1 << 1) //SPI_AHB_USR_COMMAND_4BYTE
 #define SPIUDUPLEX (1 << 0) //SPI_DOUTDIN
 
