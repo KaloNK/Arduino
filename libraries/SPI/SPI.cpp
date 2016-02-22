@@ -71,7 +71,7 @@ void SPIClass::RegRestore(uint32 backup_mem[7])
 void SPIClass::OverlapInit(void)
 {
     // Enable HSPI overlap to SPI, Two SPI Masters on CSPI
-    IOSWAP |= IOSWAP2CS;
+    IOSWAP |= (1 << IOSWAP2CS);
 
     // Set higher priority for SPI than HSPI and enable HwCs
     SPI0E3 |= 0x1;
@@ -82,7 +82,7 @@ void SPIClass::OverlapInit(void)
 void SPIClass::OverlapDeinit(void)
 {
     // Disable HSPI overlap to SPI, Two SPI Masters on CSPI
-    IOSWAP &= ~IOSWAP2CS;
+    IOSWAP &= ~(1 << IOSWAP2CS);
 
     // Set higher priority for HSPI than SPI and disable HwCs
     SPI0E3 &= ~0x1;
