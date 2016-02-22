@@ -38,6 +38,12 @@
               "name": "Adafruit HUZZAH ESP8266 (ESP-12)"
             },
             {
+              "name": "ESPresso Lite 1.0"
+            },
+            {
+              "name": "ESPresso Lite 2.0"
+            },            
+            {
               "name": "SparkFun Thing"
             },
             {
@@ -50,7 +56,10 @@
               "name": "WeMos D1 mini"
             },
             {
-              "name": "ESPino"
+              "name": "ESPino (ESP-12 Module)"
+            },
+            {
+              "name": "ESPino (WROOM-02 Module)"
             },
             {
               "name": "WifInfo"
