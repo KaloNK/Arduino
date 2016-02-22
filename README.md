@@ -10,6 +10,7 @@ ESP8266 Arduino core comes with libraries to communicate over WiFi using TCP and
   - [Using Boards Manager](#installing-with-boards-manager)
   - [Using git version](#using-git-version-)
   - [Using stable version with PlatformIO](#using-stable-version-with-platformio)
+  - [Building with make](#building-with-make)
 - [Documentation](#documentation)
 - [Issues and support](#issues-and-support)
 - [Contributing](#contributing)  
@@ -64,6 +65,12 @@ python get.py
 
 See [detailed instructions on how to use Espressif platform with PlatformIO](doc/platformio.md).
 
+### Building with make
+
+[makeEspArduino](https://github.com/plerup/makeEspArduino) is a generic makefile for any ESP8266 Arduino project.
+Using make instead of the Arduino IDE makes it easier to do automated and production builds.
+
+
 ### Documentation
 
 Documentation for latest development version:
@@ -101,3 +108,5 @@ Espressif SDK included in this build is under Espressif MIT License.
 ESP8266 core files are licensed under LGPL.
 
 [SPI Flash File System (SPIFFS)](https://github.com/pellepl/spiffs) written by Peter Andersson is used in this project. It is distributed under MIT license.
+
+[umm_malloc](https://github.com/rhempel/umm_malloc) memory management library written by Ralph Hempel is used in this project. It is distributed under MIT license.
