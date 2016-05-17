@@ -107,14 +107,11 @@ void SPIClass::begin(spi_devno dev_no) {
             settings._clock = 1000000;	// Use default 1MHz Frequency
             break;
         case SPI_CS0_FLASH :
-            OverlapInit();
             break;
         case SPI_CS1_DEV :
-            OverlapInit();
             pinMode(1, FUNCTION_1);	// GPIO1
             break;
         case SPI_CS2_DEV :
-            OverlapInit();
             pinMode(0, FUNCTION_1);	// GPIO0
             break;
         default: return;
@@ -184,28 +181,32 @@ void SPIClass::HSPIdevSel(SPISettings settings, spi_devno dev_no)
 
     switch(dev_no){
         case HSPI_CS_DEV :
+            OverlapDeinit();
             bitClear(SPI1P, 0);
             bitSet(SPI1P, 1);
             bitSet(SPI1P, 2);
             setHwCs(useHwCs);
             break;
         case SPI_CS0_FLASH :
+            OverlapInit();
             bitClear(SPI1P, 0);
             bitSet(SPI1P, 1);
             bitSet(SPI1P, 2);
-            SPI1U |= (SPIUCSSETUP | SPIUCSHOLD);	// HwCs
+            SPI1U |= (SPIUCSSETUP | SPIUCSHOLD);	// HwCs GPIO11 aka SD_CMD
             break;
         case SPI_CS1_DEV :
+            OverlapInit();
             bitClear(SPI1P, 1);
             bitSet(SPI1P, 0);
             bitSet(SPI1P, 2);
-            SPI1U |= (SPIUCSSETUP | SPIUCSHOLD);	// HwCs
+            SPI1U |= (SPIUCSSETUP | SPIUCSHOLD);	// HwCs GPIO1 !!! Need to swap UART TX !!!
             break;
         case SPI_CS2_DEV :
+            OverlapInit();
             bitClear(SPI1P, 2);
             bitSet(SPI1P, 0);
             bitSet(SPI1P, 1);
-            SPI1U |= (SPIUCSSETUP | SPIUCSHOLD);	// HwCs
+            SPI1U |= (SPIUCSSETUP | SPIUCSHOLD);	// HwCs GPIO0
             break;
         default: break;
     }
@@ -220,6 +221,8 @@ void SPIClass::beginTransaction(SPISettings settings, spi_devno dev_no, spi_mode
 
     SPI1C &= ~(SPICQIO | SPICDIO | SPICFASTRD);	// Reset to defaults (SIO)
     SPI1U &= ~(SPIUFWQIO | SPIUFWDIO);
+    if (dev_no == HSPI_CS_DEV) return;
+
     switch (spi_mode) {
         case SPI_QIO :
             SPI1C |= (SPICQIO | SPICFASTRD);
@@ -255,12 +258,11 @@ void SPIClass::setDataMode(uint8_t dataMode) {
     }
 
     if(CPOL) {
-        SPI1P |= 1<<29;
+        bitSet(SPI1P, 29);
     } else {
-        SPI1P &= ~(1<<29);
+        bitClear(SPI1P, 29);
         //todo test whether it is correct to set CPOL like this.
     }
-
 }
 
 void SPIClass::setBitOrder(uint8_t bitOrder) {
