@@ -106,7 +106,7 @@ wl_status_t ESP8266WiFiSTAClass::begin(const char* ssid, const char *passphrase,
         return WL_CONNECT_FAILED;
     }
 
-    if(passphrase && strlen(passphrase) > 63) {
+    if(passphrase && strlen(passphrase) > 64) {
         // fail passphrase too long!
         return WL_CONNECT_FAILED;
     }
@@ -115,7 +115,10 @@ wl_status_t ESP8266WiFiSTAClass::begin(const char* ssid, const char *passphrase,
     strcpy(reinterpret_cast<char*>(conf.ssid), ssid);
 
     if(passphrase) {
-        strcpy(reinterpret_cast<char*>(conf.password), passphrase);
+        if (strlen(passphrase) == 64) // it's not a passphrase, is the PSK
+            memcpy(reinterpret_cast<char*>(conf.password), passphrase, 64);
+        else
+            strcpy(reinterpret_cast<char*>(conf.password), passphrase);
     } else {
         *conf.password = 0;
     }
@@ -137,6 +140,11 @@ wl_status_t ESP8266WiFiSTAClass::begin(const char* ssid, const char *passphrase,
     ETS_UART_INTR_DISABLE();
 
     if(WiFi._persistent) {
+        // workaround for #1997: make sure the value of ap_number is updated and written to flash
+        // to be removed after SDK update
+        wifi_station_ap_number_set(2);
+        wifi_station_ap_number_set(1);
+
         wifi_station_set_config(&conf);
     } else {
         wifi_station_set_config_current(&conf);
